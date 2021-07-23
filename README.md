@@ -18,7 +18,7 @@ Luxor is divided in two parts, the first one containing the GraphQL API requests
 from luxor import API
 from resolvers import RESOLVERS
 
-API = API(host = 'https://api.beta.luxor.tech/graphql', org = 'luxor', key = 'lxk514e9be027b9a132b1aa39bab818a12e')
+API = API(host = 'https://api.beta.luxor.tech/graphql', method = 'POST', org = 'luxor', key = 'lxk514e9be027b9a132b1aa39bab818a12e')
 RESOLVERS = RESOLVERS(df = False)
 
 resp = API.method(parameters)
