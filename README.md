@@ -1,5 +1,8 @@
 # Luxor Python Library and Command Line GraphQL API Client
 
+## API Documentation
+This Library / Client implements a subset of available endpoints. API Docs can be found here: https://docs.luxor.tech/.
+
 ## Get Started
 
 To get started, you will need the following basic information:
