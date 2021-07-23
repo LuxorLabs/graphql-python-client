@@ -46,6 +46,9 @@ class API:
 
     get_transaction_history(subaccount, cid, first)
         Returns on-chain transactions for a subaccount and currency combo.
+
+    get_hashrate_score_history(subaccount, mpn, first)
+        Returns a subaccount earnings, scoring hashrate and efficiency per day.
     """
     def __init__(self,
                  host: str,
@@ -369,6 +372,35 @@ class API:
                     }
                 }"""
         params = {'uname': subaccount, 'cid': cid, 'first': first}
+
+        return self.request(query, params)
+
+    def get_hashrate_score_history(self, subaccount: str, mpn: str, first: int) -> requests.Request:
+        """
+        Returns a subaccount earnings, scoring hashrate and efficiency per day.
+        
+        Parameters
+        ----------
+        subaccount : str
+            subaccount username
+        mpn : str
+            mining profile name, refers to the coin ticker
+        first : int
+            limits the number of data points returned
+        """
+
+        query = """ query getHashrateScoreHistory($mpn: MiningProfileName!, $uname: String!, $first : Int) {
+                    getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first) {
+                        nodes {
+                            date
+                            hashrate
+                            efficiency
+                            revenue
+                            }
+                        }
+                    }"""
+
+        params = {'uname': subaccount, 'mpn': mpn, 'first': first}
 
         return self.request(query, params)
 

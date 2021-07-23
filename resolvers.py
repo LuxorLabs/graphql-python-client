@@ -32,6 +32,9 @@ class RESOLVERS:
 
     resolve_get_transaction_history(json)
         Returns a formatted object of on-chain transactions for a subaccount and currency combo.
+
+    resolve_get_hashrate_score_history(json)
+        Returns a formatted object of subaccount earnings, scoring hashrate and efficiency per day.
     """
     def __init__(self, df: bool = False):
         """
@@ -54,8 +57,8 @@ class RESOLVERS:
 
         if self.df:
             return pd.DataFrame(data, columns=['subaccounts'])
-        else:
-            return data
+        
+        return data
 
     def resolve_get_subaccount_hashrate_history(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
@@ -69,8 +72,8 @@ class RESOLVERS:
 
         if self.df:
             return pd.DataFrame(data, columns=['timestamp', 'hashrate'])
-        else:
-            return data
+
+        return data
 
     def resolve_get_worker_details(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
@@ -88,8 +91,7 @@ class RESOLVERS:
                 pd.DataFrame.from_dict([i[1] for i in data])
             ],
                              axis=1)
-        else:
-            return data
+        return data
 
     def resolve_get_worker_hashrate_history(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
@@ -103,8 +105,8 @@ class RESOLVERS:
 
         if self.df:
             return pd.DataFrame(data, columns=['timestamp', 'hashrate'])
-        else:
-            return data
+        
+        return data
 
     def resolve_get_profile_active_worker_count(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
@@ -115,8 +117,8 @@ class RESOLVERS:
         if self.df:
             return pd.DataFrame([json['data']['getProfileActiveWorkers']],
                                 columns=['activeWorkers'])
-        else:
-            return json['data']['getProfileActiveWorkers']
+        
+        return json['data']['getProfileActiveWorkers']
 
     def resolve_get_profile_inactive_worker_count(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
@@ -127,8 +129,8 @@ class RESOLVERS:
         if self.df:
             return pd.DataFrame([json['data']['getProfileInactiveWorkers']],
                                 columns=['inactiveWorkers'])
-        else:
-            return json['data']['getProfileInactiveWorkers']
+        
+        return json['data']['getProfileInactiveWorkers']
 
     def resolve_get_transaction_history(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
@@ -144,5 +146,22 @@ class RESOLVERS:
             return pd.DataFrame(
                 data,
                 columns=['createdAt', 'amount', 'status', 'Transaction ID'])
-        else:
-            return data
+        
+        return data
+
+    def resolve_get_hashrate_score_history(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
+        """
+        Returns a formatted object of subaccount earnings, scoring hashrate and efficiency per day.
+        """
+
+        data = [
+            list(i.values()) for i in json['data']['getHashrateScoreHistory']['nodes']
+        ]
+
+        if self.df:
+            return pd.DataFrame(
+                data,
+                columns = ['date', 'hashrate', 'efficiency', 'revenue']
+            )
+        
+        return data
