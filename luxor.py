@@ -505,5 +505,4 @@ if __name__ == '__main__':
         logging.info('Unexpected Error: ', error)
         exit(1)
 
-    logging.info(resp)
     exit(0)
