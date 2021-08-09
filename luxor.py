@@ -122,10 +122,10 @@ class API:
             return response.json()
         elif response.content:
             raise Exception(
-                str(response.status_code) + ": " + response.reason + ": " +
-                str(response.content))
+                str(response.status_code) + ": " + str(response.reason) + ": " +
+                str(response.content.decode()))
         else:
-            raise Exception(str(response.status_code) + ": " + response.reason)
+            raise Exception(str(response.status_code) + ": " + str(response.reason))
 
     # Define API Methods
     def get_subaccounts(self, first: int) -> requests.Request:
@@ -156,7 +156,7 @@ class API:
         mpn : str
             mining profile name, refers to the coin ticker
         inputInterval : str
-            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
+            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
         first : int
             limits the number of data points returned
         """
@@ -278,9 +278,9 @@ class API:
         mpn : str
             mining profile name, refers to the coin ticker
         inputBucket : str
-            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
+            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
         inputDuration : str
-            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
+            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
         first : int
             limits the number of data points returned
         """
@@ -502,7 +502,7 @@ if __name__ == '__main__':
         logging.info(resp)
 
     except Exception as error:
-        logging.info('Unexpected Error: ', error)
+        logging.critical(error, exc_info=True)
         exit(1)
 
     exit(0)
