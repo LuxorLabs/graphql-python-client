@@ -165,3 +165,14 @@ class RESOLVERS:
             )
         
         return data
+
+    def resolve_get_revenue_ph(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
+        """
+        Returns a formatted object of average Hashprice per PH over the last 24H.
+        """
+        
+        data = json['data']        
+        if self.df:
+            return pd.DataFrame(data, index=[0])
+        else:
+            return data['getRevenuePh']
