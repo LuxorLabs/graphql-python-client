@@ -49,6 +49,9 @@ class API:
 
     get_hashrate_score_history(subaccount, mpn, first)
         Returns a subaccount earnings, scoring hashrate and efficiency per day.
+        
+    get_revenue_ph(mpn, first)
+        Returns average Hashprice per PH over the last 24H. 
     """
     def __init__(self,
                  host: str,
@@ -433,6 +436,26 @@ class API:
 
         raise Exception(f'failed to execute {method}')
 
+    def get_revenue_ph(self, mpn: str) -> requests.Request:
+        """
+        Returns average Hashprice per PH over the last 24H. 
+        
+        Parameters
+        ----------
+        mpn : str
+            mining profile name, refers to the coin ticker
+        first : int
+            limits the number of data points returned
+        """
+        
+        query = """query getRevenuePh($mpn: MiningProfileName!) {
+                    getRevenuePh(mpn: $mpn)
+                }
+        """
+
+        params = {'mpn': mpn}
+        
+        return self.request(query, params)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
