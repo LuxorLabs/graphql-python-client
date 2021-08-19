@@ -407,6 +407,27 @@ class API:
 
         return self.request(query, params)
 
+    def get_revenue_ph(self, mpn: str) -> requests.Request:
+        """
+        Returns average Hashprice per PH over the last 24H. 
+        
+        Parameters
+        ----------
+        mpn : str
+            mining profile name, refers to the coin ticker
+        first : int
+            limits the number of data points returned
+        """
+        
+        query = """query getRevenuePh($mpn: MiningProfileName!) {
+                    getRevenuePh(mpn: $mpn)
+                }
+        """
+
+        params = {'mpn': mpn}
+        
+        return self.request(query, params)
+    
     def exec(self, method: str, params: Dict[str, Any]) -> requests.Request:
         """
         Helper function for dinamically calling functions safely.
@@ -435,27 +456,6 @@ class API:
             return func(*args)
 
         raise Exception(f'failed to execute {method}')
-
-    def get_revenue_ph(self, mpn: str) -> requests.Request:
-        """
-        Returns average Hashprice per PH over the last 24H. 
-        
-        Parameters
-        ----------
-        mpn : str
-            mining profile name, refers to the coin ticker
-        first : int
-            limits the number of data points returned
-        """
-        
-        query = """query getRevenuePh($mpn: MiningProfileName!) {
-                    getRevenuePh(mpn: $mpn)
-                }
-        """
-
-        params = {'mpn': mpn}
-        
-        return self.request(query, params)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
