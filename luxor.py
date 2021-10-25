@@ -502,17 +502,17 @@ if __name__ == '__main__':
                       '--endpoint',
                       dest='host',
                       help='API ENDPOINT',
-                      default='https://api.nydig.luxorlabs.dev/graphql')
+                      default='https://api.beta.luxor.tech/graphql')
     parser.add_option('-o',
                       '--organization',
                       dest='org',
                       help='Organization Slug',
-                      default='nydig')
+                      default='luxor')
     parser.add_option('-k',
                       '--key',
                       dest='key',
                       help='Profile API Key',
-                      default='lxk.1a733d91280eb22a62b6652250e08d76')
+                      default='')
     parser.add_option('-m',
                       '--method',
                       dest='method',
@@ -537,7 +537,7 @@ if __name__ == '__main__':
                       '--df',
                       dest='df',
                       help='Pandas DataFrame',
-                      default=True)
+                      default=False)
 
     options, args = parser.parse_args()
 
