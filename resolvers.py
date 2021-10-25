@@ -12,6 +12,9 @@ class RESOLVERS:
     resolve_get_subaccounts(json)
         Returns a formatted object of all subaccounts that belong to the Profile owner of the API Key.
     
+    resolve_get_subaccount_hashrate_history(subaccount, mpn, inputInterval, first)
+        Returns an object of a subaccount hashrate timeseries.
+    
     resolve_get_subaccount_hashrate_history(json)
         Returns a formatted object of a subaccount hashrate timeseries. 
 
@@ -32,9 +35,6 @@ class RESOLVERS:
 
     resolve_get_transaction_history(json)
         Returns a formatted object of on-chain transactions for a subaccount and currency combo.
-
-    resolve_get_hashrate_score_history(json)
-        Returns a formatted object of subaccount earnings, scoring hashrate and efficiency per day.
     """
     def __init__(self, df: bool = False):
         """
@@ -56,9 +56,21 @@ class RESOLVERS:
         ]
 
         if self.df:
-            return pd.DataFrame(data, columns=['subaccounts'])
+            return pd.DataFrame([data], columns=['subaccounts'])
+        else:
+            return data
+    
+    def resolve_get_subaccount_mining_summary(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
+        """
+        Returns a formatted object of a subaccount hashrate timeseries.
+        """
         
-        return data
+        data = json['data']['getMiningSummary']
+        
+        if self.df:
+            return pd.DataFrame(data, columns=['hashrate', 'validShares', 'invalidShares', 'staleShares', 'badShares', 'lowDiffShares', 'revenue'], index = [0])
+        else:
+            return data
 
     def resolve_get_subaccount_hashrate_history(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
         """
