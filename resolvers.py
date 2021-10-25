@@ -35,6 +35,12 @@ class RESOLVERS:
 
     resolve_get_transaction_history(json)
         Returns a formatted object of on-chain transactions for a subaccount and currency combo.
+    
+    resolve_get_hashrate_score_history(json)
+        Returns a formatted object of subaccount earnings, scoring hashrate and efficiency per day.
+    
+    resolve_get_revenue_ph(json) 
+        Returns a formatted object of average Hashprice per PH over the last 24H.
     """
     def __init__(self, df: bool = False):
         """

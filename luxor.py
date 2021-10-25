@@ -51,6 +51,9 @@ class API:
     get_transaction_history(subaccount, cid, first)
         Returns on-chain transactions for a subaccount and currency combo.
     
+    get_hashrate_score_history(subaccount, mpn, first)
+        Returns a subaccount earnings, scoring hashrate and efficiency per day.
+    
     get_revenue_ph(mpn, first)
         Returns average Hashprice per PH over the last 24H. 
     """
