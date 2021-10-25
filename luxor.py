@@ -3,6 +3,7 @@ import json
 import logging
 import requests
 import optparse
+import pandas as pd
 from typing import Dict, Any
 from resolvers import RESOLVERS
 
@@ -25,6 +26,9 @@ class API:
     
     get_subaccounts(first)
         Returns all subaccounts that belong to the Profile owner of the API Key.
+        
+    get_subaccount_mining_summary(subaccount, mpn, inputInterval)
+        Returns an object of a subaccount mining summary.
     
     get_subaccount_hashrate_history(subaccount, mpn, inputInterval, first)
         Returns an object of a subaccount hashrate timeseries.
@@ -46,10 +50,10 @@ class API:
 
     get_transaction_history(subaccount, cid, first)
         Returns on-chain transactions for a subaccount and currency combo.
-
+    
     get_hashrate_score_history(subaccount, mpn, first)
         Returns a subaccount earnings, scoring hashrate and efficiency per day.
-        
+    
     get_revenue_ph(mpn, first)
         Returns average Hashprice per PH over the last 24H. 
     """
@@ -144,6 +148,43 @@ class API:
         query = """query getSubaccounts($first: Int) {users(first: $first) {edges {node {username}}}}"""
         params = {'first': first}
 
+        return self.request(query, params)
+    
+    def get_subaccount_mining_summary(self, subaccount: str, mpn: str,
+                                      inputInterval: str) -> requests.Request:
+        
+        """
+        Returns an object of a subaccount mining summary.
+        
+        Parameters
+        ----------
+        subaccount : str
+            subaccount username
+        mpn : str
+            mining profile name, refers to the coin ticker
+        inputInterval : str
+            intervals to generate the mining summary lookback, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
+        """
+        
+        query = """query getMiningSummary($mpn: MiningProfileName!, $userName: String!, $inputDuration: HashrateIntervals!) {
+                        getMiningSummary(mpn: $mpn, userName: $userName, inputDuration: $inputDuration) {
+                            hashrate
+                            validShares
+                            invalidShares
+                            staleShares
+                            badShares
+                            lowDiffShares
+                            revenue
+                    }
+                }
+        """
+        
+        params = {
+            'userName': subaccount,
+            'mpn': mpn,
+            'inputDuration': inputInterval
+        }
+        
         return self.request(query, params)
 
     def get_subaccount_hashrate_history(self, subaccount: str, mpn: str,
