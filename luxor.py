@@ -350,6 +350,73 @@ class API:
         }
 
         return self.request(query, params)
+    
+    def get_subaccount_workers_status(self, mpn: str, subaccount: str) -> requests.Request: 
+        """
+        
+        """
+        
+        query = """query getUserMinersStatusCount($usrname: String!, $mpn: MiningProfileName!) {
+                    getUserMinersStatusCount(usrname: $usrname, mpn: $mpn) {
+                        dead
+                        warning
+                        active
+                    }
+                }
+        """
+        
+        params = {'mpn': mpn, 'usrname': subaccount}
+        
+        return self.request(query, params)
+    
+    def get_pool_hashrate(self, mpn: str, orgSlug: str) -> requests.Request:
+        """
+        Returns an integer count of distinct Profile active workers.
+        Parameters:
+        -----------
+        mpn : str
+            mining profile name, refers to the coin ticker
+        orgSlug : str
+            organization name
+        """
+        query = """query getPoolHashrate {
+                    getPoolHashrate(mpn: BTC, orgSlug: "luxor")
+                }
+            """
+        params = {'mpn': mpn, 'orgSlug': orgSlug}
+        return self.request(query, params)
+    
+    def get_revenue(self, subaccount: str, mpn: str, startInterval, endInterval) -> requests.Request:
+        """
+        Returns on-chain transactions for a subaccount and currency combo.
+        Parameters
+        ----------
+        subaccount : str
+            subaccount username
+        cid : str
+            currency identifier, refers to the coin ticker
+        startInterval : dict
+            an interval of time that has passed
+        endInterval : dict
+            an interval of time that has passed
+        """
+        
+        query = """query getRevenue($uname: String!, $cid: CurrencyProfileName!, $startInterval: IntervalInput!, $endInterval: IntervalInput!) {
+                    getRevenue(uname: $uname, cid: $cid, startInterval: $startInterval, endInterval: $endInterval)
+                }"""
+        params = {'uname': subaccount, 'cid':  mpn, 'startInterval': startInterval, 'endInterval': endInterval}
+        
+        # query = """query getRevenue {
+        #                 getRevenue(
+        #                 cid: BTC
+        #                 endInterval: {days: 30}
+        #                 startInterval: {days: 0}
+        #                 uname: "gpbw"
+        #             )
+        #         }
+        
+        # """        
+        return self.request(query, params)
 
     def get_profile_active_worker_count(self, mpn: str) -> requests.Request:
         """
@@ -362,8 +429,8 @@ class API:
             mining profile name, refers to the coin ticker
         """
 
-        query = """query getActiveWorkers {
-                    getProfileActiveWorkers(mpn: BTC)
+        query = """query getUserMinersStatusCount {
+                    getUserMinersStatusCount(mpn: BTC)
                 }
             """
         params = {'mpn': mpn}
@@ -434,7 +501,7 @@ class API:
         """
 
         query = """ query getHashrateScoreHistory($mpn: MiningProfileName!, $uname: String!, $first : Int) {
-                    getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first) {
+                    getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first, orderBy: DATE_ASC) {
                         nodes {
                             date
                             hashrate
