@@ -406,16 +406,6 @@ class API:
                 }"""
         params = {'uname': subaccount, 'cid':  mpn, 'startInterval': startInterval, 'endInterval': endInterval}
         
-        # query = """query getRevenue {
-        #                 getRevenue(
-        #                 cid: BTC
-        #                 endInterval: {days: 30}
-        #                 startInterval: {days: 0}
-        #                 uname: "gpbw"
-        #             )
-        #         }
-        
-        # """        
         return self.request(query, params)
 
     def get_profile_active_worker_count(self, mpn: str) -> requests.Request:
