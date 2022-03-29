@@ -491,7 +491,7 @@ class API:
         """
 
         query = """ query getHashrateScoreHistory($mpn: MiningProfileName!, $uname: String!, $first : Int) {
-                    getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first, orderBy: DATE_ASC) {
+                    getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first, orderBy: DATE_DESC) {
                         nodes {
                             date
                             hashrate
@@ -528,7 +528,7 @@ class API:
     
     def exec(self, method: str, params: Dict[str, Any]) -> requests.Request:
         """
-        Helper function for dinamically calling functions safely.
+        Helper function for dynamically calling functions safely.
 
         Parameters
         ----------
