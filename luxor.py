@@ -329,7 +329,7 @@ class API:
             limits the number of data points returned
         """
 
-        query = """query getWorkerHashrateHistory($inputUsername: String, $workerName: String, $mpn: MiningProfileName, $inputBucket: HashrateIntervals, $inputDuration: HashrateIntervals, $first: Int) {
+        query = """query getWorkerHashrateHistory($inputUsername: String!, $workerName: String!, $mpn: MiningProfileName!, $inputBucket: HashrateIntervals!, $inputDuration: HashrateIntervals!, $first: Int) {
                     getWorkerHashrateHistory(username: $inputUsername, workerName: $workerName, mpn: $mpn, inputBucket: $inputBucket, inputDuration: $inputDuration, first: $first) {
                         edges {
                             node {
