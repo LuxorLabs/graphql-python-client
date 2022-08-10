@@ -21,6 +21,9 @@ class RESOLVERS:
     resolve_get_worker_details(json)
         Returns a formatted object of all workers pointed to a subaccount hashrate and efficiency details.
         Can be used for 1H and 24H API calls.
+    
+    resolve_get_unrestricted_worker_details
+        Returns a formatted object of all workers pointed to a subaccount hashrate and efficiency details.
 
     resolve_get_worker_hashrate_history(json)
         Returns a formatted object of a miner hashrate timeseries.
@@ -109,6 +112,24 @@ class RESOLVERS:
                 pd.DataFrame.from_dict([i[1] for i in data])
             ],
                              axis=1)
+        return data
+    
+    def resolve_get_unrestricted_worker_details(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:
+        """
+        Returns a formatted object of all workers pointed to a subaccount hashrate and efficiency details.
+        """
+
+        data = [
+            list(i['node'].values()) for i in json['data']['getWorkerDetails']['edges']
+        ]
+
+        if self.df:
+            return pd.DataFrame(
+                data,
+                columns=['workerName', 'hashrate', 'validShares', 'staleShares', 
+                         'badShares', 'duplicateShares', 'invalidShares', 'lowDiffShares', 
+                         'efficiency', 'revenue', 'status', 'updatedAt']
+                )
         return data
 
     def resolve_get_worker_hashrate_history(self, json: Dict[str, Any]) -> Union[list, pd.DataFrame]:

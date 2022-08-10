@@ -33,6 +33,9 @@ class API:
     get_subaccount_hashrate_history(subaccount, mpn, inputInterval, first)
         Returns an object of a subaccount hashrate timeseries.
     
+    get_worker_details(subaccount, mpn, minutes, first)
+        Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined minute interval.
+
     get_worker_details_1H(subaccount, mpn, first)
         Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.
     
@@ -135,6 +138,27 @@ class API:
             raise Exception(str(response.status_code) + ": " + str(response.reason))
 
     # Define API Methods
+    def get_all_transaction_history(self, mpn: str, subaccount: str, first: int) -> requests.Request:
+        
+        query = """query getAllTransactionHistory($cid: CurrencyProfileName!, $uname: String!, $first: Int) {
+            getAllTransactionHistory(cid: $cid, uname: $uname, first: $first) {  
+                edges {  
+                    node {  
+                        transactionId  
+                        amount  
+                        status
+                        payoutAddress
+                        currency
+                    }  
+                }  
+            }  
+        }
+        """
+        
+        params = {'cid': mpn, 'uname': subaccount, 'first': first}
+        
+        return self.request(query, params)
+        
     def get_subaccounts(self, first: int) -> requests.Request:
         """
         Returns all subaccounts that belong to the Profile owner of the API Key.
@@ -152,7 +176,6 @@ class API:
     
     def get_subaccount_mining_summary(self, subaccount: str, mpn: str,
                                       inputInterval: str) -> requests.Request:
-        
         """
         Returns an object of a subaccount mining summary.
         
@@ -222,6 +245,54 @@ class API:
             'first': first
         }
 
+        return self.request(query, params)
+    
+    def get_worker_details(self, subaccount: str, mpn: str,
+                           minutes: int, first: int) -> requests.Request: 
+        """
+        Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined interval.
+        
+        Parameters
+        ----------
+        subaccount : str
+            subaccount username
+        mpn : str
+            mining profile name, refers to the coin ticker
+        minutes : int
+            minutes lookback to generate metrics
+        first : int
+            limits the number of data points returned
+        """
+        
+        query = """query getWorkerDetails($duration: IntervalInput!, $mpn: MiningProfileName!, $uname: String!, $first: Int) {
+                        getWorkerDetails(
+                            duration: $duration
+                            mpn: $mpn
+                            uname: $uname
+                            first: $first
+                        ) {
+                            edges {
+                            node {
+                                workerName
+                                hashrate
+                                validShares
+                                staleShares
+                                badShares
+                                duplicateShares
+                                invalidShares
+                                lowDiffShares
+                                efficiency
+                                revenue
+                                status
+                                updatedAt
+                            }
+                            }
+                        }
+                    }"""
+                        
+        duration = {'minutes': minutes}
+        params = {'duration': duration, 'mpn': mpn, 'uname':  subaccount, 'first': first}
+        
         return self.request(query, params)
 
     def get_worker_details_1H(self, subaccount: str, mpn: str,
