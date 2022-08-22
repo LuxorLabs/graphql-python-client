@@ -175,7 +175,22 @@ class API:
         params = {'first': first, 'offset': offset}
 
         return self.request(query, params)
-    
+
+    def get_total_subaccounts(self, dummy: str) -> requests.Request:
+        """
+        Returns the total subaccounts that belongs to the API Key.
+
+        Parameters
+        ----------
+        dummy : str
+            unused parameter to reuse the same code structure.
+        """
+
+        query = """query getTotalSubaccounts {users{totalCount}}"""
+        params = {}
+
+        return self.request(query, params)
+
     def get_subaccount_mining_summary(self, subaccount: str, mpn: str,
                                       inputInterval: str) -> requests.Request:
         """
