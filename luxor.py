@@ -155,7 +155,7 @@ class API:
         }
         """
         
-        params = {'cid': mpn, 'uname': subaccount, 'first': first}
+        params = {'cid': mpn, 'uname': f"{subaccount}", 'first': first}
         
         return self.request(query, params)
         
@@ -203,7 +203,7 @@ class API:
         """
         
         params = {
-            'userName': subaccount,
+            'userName': f"{subaccount}",
             'mpn': mpn,
             'inputDuration': inputInterval
         }
@@ -239,7 +239,7 @@ class API:
             }
         }"""
         params = {
-            'inputUsername': subaccount,
+            'inputUsername': f"{subaccount}",
             'mpn': mpn,
             'inputInterval': inputInterval,
             'first': first
@@ -291,7 +291,7 @@ class API:
                     }"""
                         
         duration = {'minutes': minutes}
-        params = {'duration': duration, 'mpn': mpn, 'uname':  subaccount, 'first': first}
+        params = {'duration': duration, 'mpn': mpn, 'uname':  f"{subaccount}", 'first': first}
         
         return self.request(query, params)
 
@@ -333,7 +333,7 @@ class API:
                     }
                 }
             }"""
-        params = {'username': subaccount, 'mpn': mpn, 'first': first}
+        params = {'username': f"{subaccount}", 'mpn': mpn, 'first': first}
 
         return self.request(query, params)
 
@@ -375,7 +375,7 @@ class API:
                     }
                 }
             }"""
-        params = {'username': subaccount, 'mpn': mpn, 'first': first}
+        params = {'username': f"{subaccount}", 'mpn': mpn, 'first': first}
 
         return self.request(query, params)
 
@@ -412,7 +412,7 @@ class API:
                 }"""
 
         params = {
-            'inputUsername': subaccount,
+            'inputUsername': f"{subaccount}",
             'workerName': workername,
             'mpn': mpn,
             'inputBucket': inputBucket,
@@ -436,7 +436,7 @@ class API:
                 }
         """
         
-        params = {'mpn': mpn, 'usrname': subaccount}
+        params = {'mpn': mpn, 'usrname': f"{subaccount}"}
         
         return self.request(query, params)
     
@@ -475,7 +475,7 @@ class API:
         query = """query getRevenue($uname: String!, $cid: CurrencyProfileName!, $startInterval: IntervalInput!, $endInterval: IntervalInput!) {
                     getRevenue(uname: $uname, cid: $cid, startInterval: $startInterval, endInterval: $endInterval)
                 }"""
-        params = {'uname': subaccount, 'cid':  mpn, 'startInterval': startInterval, 'endInterval': endInterval}
+        params = {'uname': f"{subaccount}", 'cid':  mpn, 'startInterval': startInterval, 'endInterval': endInterval}
         
         return self.request(query, params)
 
@@ -543,7 +543,7 @@ class API:
                         }
                     }
                 }"""
-        params = {'uname': subaccount, 'cid': cid, 'first': first}
+        params = {'uname': f"{subaccount}", 'cid': cid, 'first': first}
 
         return self.request(query, params)
 
@@ -572,7 +572,7 @@ class API:
                         }
                     }"""
 
-        params = {'uname': subaccount, 'mpn': mpn, 'first': first}
+        params = {'uname': f"{subaccount}", 'mpn': mpn, 'first': first}
 
         return self.request(query, params)
 
