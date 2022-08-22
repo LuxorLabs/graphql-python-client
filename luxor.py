@@ -159,7 +159,7 @@ class API:
         
         return self.request(query, params)
         
-    def get_subaccounts(self, first: int) -> requests.Request:
+    def get_subaccounts(self, first: int, offset: int = 0) -> requests.Request:
         """
         Returns all subaccounts that belong to the Profile owner of the API Key.
 
@@ -167,10 +167,12 @@ class API:
         ----------
         first : int
             limits the number of data points returned.
+        offset : int
+            skips elements of data points returned.
         """
 
-        query = """query getSubaccounts($first: Int) {users(first: $first) {edges {node {username}}}}"""
-        params = {'first': first}
+        query = """query getSubaccounts($first: Int, $offset: Int) {users(first: $first, offset: $offset) {edges {node {username}}}}"""
+        params = {'first': first, 'offset': offset}
 
         return self.request(query, params)
     
