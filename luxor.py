@@ -128,7 +128,7 @@ def get_subaccount_mining_summary(
 def get_subaccount_hashrate_history(
     subaccount: str,
     mpn: str,
-    inputInterval: str,
+    input_interval: str,
     first: int,
 ) -> dict[str, Any]:
     """
@@ -136,7 +136,7 @@ def get_subaccount_hashrate_history(
 
     subaccount (str): subaccount username
     mpn (str): mining profile name, refers to the coin ticker
-    inputInterval (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
+    input_interval (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
     first (int): limits the number of data points returned
     """
 
@@ -153,7 +153,7 @@ def get_subaccount_hashrate_history(
     params = {
         "inputUsername": f"{subaccount}",
         "mpn": mpn,
-        "inputInterval": inputInterval,
+        "inputInterval": input_interval,
         "first": first,
     }
 
@@ -302,8 +302,8 @@ def get_worker_hashrate_history(
     subaccount: str,
     workername: str,
     mpn: str,
-    inputBucket: str,
-    inputDuration: str,
+    input_bucket: str,
+    input_duration: str,
     first: int,
 ) -> dict[str, Any]:
     """
@@ -312,8 +312,8 @@ def get_worker_hashrate_history(
     subaccount (str): subaccount username
     workername (str): rig identifier
     mpn (str): mining profile name, refers to the coin ticker
-    inputBucket (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
-    inputDuration (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
+    input_bucket (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
+    input_duration (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
     first (int): limits the number of data points returned
     """
 
@@ -332,8 +332,8 @@ def get_worker_hashrate_history(
         "inputUsername": f"{subaccount}",
         "workerName": workername,
         "mpn": mpn,
-        "inputBucket": inputBucket,
-        "inputDuration": inputDuration,
+        "inputBucket": input_bucket,
+        "inputDuration": input_duration,
         "first": first,
     }
 
