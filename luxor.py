@@ -537,5 +537,22 @@ def get_revenue_ph(mpn: str) -> dict[str, Any]:
     return CLIENT.request(query, params)
 
 
+@app.command()
+def create_custom_request(query: str, params: str) -> dict[str, Any]:
+    """
+
+    Returns the result of the custom graphql query sent to the endpoint
+
+    Args:
+        query (str): The GraphQl query to execute
+        params (str): The string representation of the params e.g. '{"argument": "value"}'
+
+    Returns:
+        dict[str, Any]: JSON response of the graphql query.
+    """
+
+    return CLIENT.request(query, json.loads(params))
+
+
 if __name__ == "__main__":
     app()
