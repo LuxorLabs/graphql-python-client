@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import json
 import logging
-import optparse
+import os
 from typing import Any
 
-import requests
+import typer
+from dotenv import load_dotenv
+from rich import print
+
+from client import GraphQlClient
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,767 +20,522 @@ logging.basicConfig(
 )
 
 
-class API:
+app = typer.Typer()
+
+HOST = os.getenv("HOST")
+API_KEY = os.getenv("API_KEY")
+METHOD = os.getenv("METHOD")
+
+env_settings: list[str | None] = [HOST, API_KEY, METHOD]
+
+if None in env_settings:
+    print("[bold red]Alert![/bold red] It seems you have not setup your .env file.")
+    print(
+        "Please copy the [bold].env.example[/bold] with the name of [bold green].env[/bold green] and write your own values",
+    )
+    exit(1)
+
+
+CLIENT = GraphQlClient(host=HOST, key=API_KEY, method=METHOD)  # type: ignore
+
+
+@app.command()
+def get_all_transaction_history(
+    mpn: str,
+    subaccount: str,
+    first: int,
+) -> dict[str, Any]:
     """
-    A class used to interact with Luxor's Mining Pool GraphQL API.
+    Get all the transaction history of the user associated to the token provided.
 
-    Methods
-    -------
-    request(query, params)
-        Base function to execute operations against Luxor's GraphQL API
-
-    get_subaccounts(first)
-        Returns all subaccounts that belong to the Profile owner of the API Key.
-
-    get_subaccount_mining_summary(subaccount, mpn, inputInterval)
-        Returns an object of a subaccount mining summary.
-
-    get_subaccount_hashrate_history(subaccount, mpn, inputInterval, first)
-        Returns an object of a subaccount hashrate timeseries.
-
-    get_worker_details(subaccount, mpn, minutes, first)
-        Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined minute interval.
-
-    get_worker_details_1H(subaccount, mpn, first)
-        Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.
-
-    get_worker_details_24H(subaccount, mpn, first)
-        Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last 24 hours.
-
-    get_worker_hashrate_history(subaccount, workername, mpn, inputBucket, inputDuration, first)
-        Returns an object of a miner hashrate timeseries.
-
-    get_profile_active_worker_count(mpn)
-        Returns an integer count of distinct Profile active workers.
-
-    get_profile_inactive_worker_count(mpn)
-        Returns an integer count of distinct Profile inactive workers.
-
-    get_transaction_history(subaccount, cid, first)
-        Returns on-chain transactions for a subaccount and currency combo.
-
-    get_hashrate_score_history(subaccount, mpn, first)
-        Returns a subaccount earnings, scoring hashrate and efficiency per day.
-
-    get_revenue_ph(mpn, first)
-        Returns average Hashprice per PH over the last 24H.
+    mpn (str): mining profile name, refers to the coin ticker
+    subaccount (str): subaccount username
+    first (int): limits the number of data points returned.
     """
 
-    def __init__(
-        self,
-        host: str,
-        org: str,
-        key: str,
-        method: str,
-        verbose: bool = False,
-    ):
-        """
-        Parameters
-        ----------
-
-        host : str
-            Base endpoint for all API requests. Default is: https://api.cairo.luxorlabs.dev/graphql
-
-        org : str
-            Organization slug where the Profile is registered. Default is `luxor`.
-
-        key : str
-            Random generated API Key. Default is an empty string.
-
-        method : str
-            API request METHOD. Default is `POST`.
-
-        query : str
-            API request QUERY. Default is an empty string.
-
-        params : str
-            API request PARAMS. Default is an empty string.
-
-        verbose : boolean
-            Boolean flag that controls if API querys are logged.
-        """
-
-        self.host = host
-        self.org = org
-        self.key = key
-        self.method = method
-        self.verbose = verbose
-
-    def request(
-        self,
-        query: str,
-        params: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """
-        Base function to execute operations against Luxor's GraphQL API
-
-        Parameters
-        ----------
-        query : str
-            GraphQL compliant query string.
-        params : dictionary
-            dictionary containing the query parameters, values depend on query.
-        """
-
-        headers = {
-            "Content-Type": "application/json",
-            "x-lux-api-key": f"{self.key}",
-        }
-
-        s = requests.Session()
-        s.headers = headers  # type: ignore
-
-        if self.verbose:
-            logging.info(query)
-
-        response = s.request(
-            self.method,
-            self.host,
-            data=json.dumps({"query": query, "variables": params}).encode("utf-8"),
-        )
-
-        if response.status_code == 200:
-            return response.json()
-        elif response.content:
-            raise Exception(
-                str(response.status_code)
-                + ": "
-                + str(response.reason)
-                + ": "
-                + str(response.content.decode()),
-            )
-        else:
-            raise Exception(str(response.status_code) + ": " + str(response.reason))
-
-    # Define API Methods
-    def get_all_transaction_history(
-        self,
-        mpn: str,
-        subaccount: str,
-        first: int,
-    ) -> dict[str, Any]:
-
-        query = """query getAllTransactionHistory($cid: CurrencyProfileName!, $uname: String!, $first: Int) {
-            getAllTransactionHistory(cid: $cid, uname: $uname, first: $first) {
-                edges {
-                    node {
-                        transactionId
-                        amount
-                        status
-                        payoutAddress
-                        currency
-                    }
+    query = """query getAllTransactionHistory($cid: CurrencyProfileName!, $uname: String!, $first: Int) {
+        getAllTransactionHistory(cid: $cid, uname: $uname, first: $first) {
+            edges {
+                node {
+                    transactionId
+                    amount
+                    status
+                    payoutAddress
+                    currency
                 }
             }
         }
-        """
+    }
+    """
 
-        params = {"cid": mpn, "uname": f"{subaccount}", "first": first}
+    params = {"cid": mpn, "uname": f"{subaccount}", "first": first}
 
-        return self.request(query, params)
+    return CLIENT.request(query, params)
 
-    def get_subaccounts(self, first: int, offset: int = 0) -> dict[str, Any]:
-        """
-        Returns all subaccounts that belong to the Profile owner of the API Key.
 
-        Parameters
-        ----------
-        first : int
-            limits the number of data points returned.
-        offset : int
-            skips elements of data points returned.
-        """
+@app.command()
+def get_subaccounts(first: int, offset: int = 0) -> dict[str, Any]:
+    """
+    Returns all subaccounts that belong to the Profile owner of the API Key.
 
-        query = """query getSubaccounts($first: Int, $offset: Int) {users(first: $first, offset: $offset) {edges {node {username}}}}"""
-        params = {"first": first, "offset": offset}
+    first (int): limits the number of data points returned.
+    offset (int): skips elements of data points returned.
+    """
 
-        return self.request(query, params)
+    query = """query getSubaccounts($first: Int, $offset: Int) {users(first: $first, offset: $offset) {edges {node {username}}}}"""
+    params = {"first": first, "offset": offset}
 
-    def get_subaccount_mining_summary(
-        self,
-        subaccount: str,
-        mpn: str,
-        inputInterval: str,
-    ) -> dict[str, Any]:
-        """
-        Returns an object of a subaccount mining summary.
+    return CLIENT.request(query, params)
 
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        mpn : str
-            mining profile name, refers to the coin ticker
-        inputInterval : str
-            intervals to generate the mining summary lookback, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
-        """
 
-        query = """query getMiningSummary($mpn: MiningProfileName!, $userName: String!, $inputDuration: HashrateIntervals!) {
-                        getMiningSummary(mpn: $mpn, userName: $userName, inputDuration: $inputDuration) {
+@app.command()
+def get_subaccount_mining_summary(
+    subaccount: str,
+    mpn: str,
+    input_interval: str,
+) -> dict[str, Any]:
+    """
+    Returns an object of a subaccount mining summary.
+
+    subaccount (str): subaccount username
+    mpn (str): mining profile name, refers to the coin ticker
+    inputInterval (str): intervals to generate the mining summary lookback, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
+    """
+
+    query = """query getMiningSummary($mpn: MiningProfileName!, $userName: String!, $inputDuration: HashrateIntervals!) {
+                    getMiningSummary(mpn: $mpn, userName: $userName, inputDuration: $inputDuration) {
+                        hashrate
+                        validShares
+                        invalidShares
+                        staleShares
+                        badShares
+                        lowDiffShares
+                        revenue
+                }
+            }
+    """
+
+    params = {
+        "userName": f"{subaccount}",
+        "mpn": mpn,
+        "inputDuration": input_interval,
+    }
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_subaccount_hashrate_history(
+    subaccount: str,
+    mpn: str,
+    inputInterval: str,
+    first: int,
+) -> dict[str, Any]:
+    """
+    Returns an object of a subaccount hashrate timeseries.
+
+    subaccount (str): subaccount username
+    mpn (str): mining profile name, refers to the coin ticker
+    inputInterval (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
+    first (int): limits the number of data points returned
+    """
+
+    query = """query getHashrateHistory($inputUsername: String, $mpn: MiningProfileName, $inputInterval: HashrateIntervals, $first: Int) {
+        getHashrateHistory(inputUsername: $inputUsername, mpn: $mpn, inputInterval: $inputInterval, first: $first) {
+            edges {
+                node {
+                    time
+                    hashrate
+                }
+            }
+        }
+    }"""
+    params = {
+        "inputUsername": f"{subaccount}",
+        "mpn": mpn,
+        "inputInterval": inputInterval,
+        "first": first,
+    }
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_worker_details(
+    subaccount: str,
+    mpn: str,
+    minutes: int,
+    first: int,
+) -> dict[str, Any]:
+    """
+    Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined interval.
+
+    subaccount (str): subaccount username
+    mpn (str): mining profile name, refers to the coin ticker
+    minutes (int): minutes lookback to generate metrics
+    first (int): limits the number of data points returned
+    """
+
+    query = """query getWorkerDetails($duration: IntervalInput!, $mpn: MiningProfileName!, $uname: String!, $first: Int) {
+                    getWorkerDetails(
+                        duration: $duration
+                        mpn: $mpn
+                        uname: $uname
+                        first: $first
+                    ) {
+                        edges {
+                        node {
+                            workerName
                             hashrate
                             validShares
-                            invalidShares
                             staleShares
                             badShares
+                            duplicateShares
+                            invalidShares
                             lowDiffShares
+                            efficiency
                             revenue
+                            status
+                            updatedAt
+                        }
+                        }
                     }
-                }
-        """
+                }"""
 
-        params = {
-            "userName": f"{subaccount}",
-            "mpn": mpn,
-            "inputDuration": inputInterval,
-        }
+    duration = {"minutes": minutes}
+    params = {
+        "duration": duration,
+        "mpn": mpn,
+        "uname": f"{subaccount}",
+        "first": first,
+    }
 
-        return self.request(query, params)
+    return CLIENT.request(query, params)
 
-    def get_subaccount_hashrate_history(
-        self,
-        subaccount: str,
-        mpn: str,
-        inputInterval: str,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns an object of a subaccount hashrate timeseries.
 
-        Parameters
-        ---------
-        subaccount : str
-            subaccount username
-        mpn : str
-            mining profile name, refers to the coin ticker
-        inputInterval : str
-            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
-        first : int
-            limits the number of data points returned
-        """
+@app.command()
+def get_worker_details_1H(
+    subaccount: str,
+    mpn: str,
+    first: int,
+) -> dict[str, Any]:
+    """
+    Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.
 
-        query = """query getHashrateHistory($inputUsername: String, $mpn: MiningProfileName, $inputInterval: HashrateIntervals, $first: Int) {
-            getHashrateHistory(inputUsername: $inputUsername, mpn: $mpn, inputInterval: $inputInterval, first: $first) {
-                edges {
+    subaccount (str): subaccount username
+    mpn (str): mining profile name, refers to the coin ticker
+    first (int): limits the number of data points returned
+    """
+
+    query = """query getWorkersOverview($mpn: MiningProfileName, $username: String, $first: Int) {
+                miners(filter: {
+                        miningProfileName: { equalTo: $mpn }
+                        user: { username: { equalTo: $username } }
+                }, first: $first) {
+                    edges {
                     node {
-                        time
-                        hashrate
+                        workerName
+                        details1H {
+                            hashrate
+                            status
+                            efficiency
+                            validShares
+                            staleShares
+                            badShares
+                            duplicateShares
+                            invalidShares
+                            lowDiffShares
+                        }
                     }
                 }
             }
         }"""
-        params = {
-            "inputUsername": f"{subaccount}",
-            "mpn": mpn,
-            "inputInterval": inputInterval,
-            "first": first,
-        }
+    params = {"username": f"{subaccount}", "mpn": mpn, "first": first}
 
-        return self.request(query, params)
+    return CLIENT.request(query, params)
 
-    def get_worker_details(
-        self,
-        subaccount: str,
-        mpn: str,
-        minutes: int,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined interval.
 
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        mpn : str
-            mining profile name, refers to the coin ticker
-        minutes : int
-            minutes lookback to generate metrics
-        first : int
-            limits the number of data points returned
-        """
+@app.command()
+def get_worker_details_24H(
+    subaccount: str,
+    mpn: str,
+    first: int,
+) -> dict[str, Any]:
+    """
+    Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last 24 hours.
 
-        query = """query getWorkerDetails($duration: IntervalInput!, $mpn: MiningProfileName!, $uname: String!, $first: Int) {
-                        getWorkerDetails(
-                            duration: $duration
-                            mpn: $mpn
-                            uname: $uname
-                            first: $first
-                        ) {
-                            edges {
-                            node {
-                                workerName
-                                hashrate
-                                validShares
-                                staleShares
-                                badShares
-                                duplicateShares
-                                invalidShares
-                                lowDiffShares
-                                efficiency
-                                revenue
-                                status
-                                updatedAt
-                            }
-                            }
-                        }
-                    }"""
+    subaccount (str): subaccount username
+    mpn (str): mining profile name, refers to the coin ticker
+    first (int): limits the number of data points returned
+    """
 
-        duration = {"minutes": minutes}
-        params = {
-            "duration": duration,
-            "mpn": mpn,
-            "uname": f"{subaccount}",
-            "first": first,
-        }
-
-        return self.request(query, params)
-
-    def get_worker_details_1H(
-        self,
-        subaccount: str,
-        mpn: str,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.
-
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        mpn : str
-            mining profile name, refers to the coin ticker
-        first : int
-            limits the number of data points returned
-        """
-
-        query = """query getWorkersOverview($mpn: MiningProfileName, $username: String, $first: Int) {
-                    miners(filter: {
-                            miningProfileName: { equalTo: $mpn }
-                            user: { username: { equalTo: $username } }
-                    }, first: $first) {
-                        edges {
-                        node {
-                            workerName
-                            details1H {
-                                hashrate
-                                status
-                                efficiency
-                                validShares
-                                staleShares
-                                badShares
-                                duplicateShares
-                                invalidShares
-                                lowDiffShares
-                            }
-                        }
-                    }
-                }
-            }"""
-        params = {"username": f"{subaccount}", "mpn": mpn, "first": first}
-
-        return self.request(query, params)
-
-    def get_worker_details_24H(
-        self,
-        subaccount: str,
-        mpn: str,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last 24 hours.
-
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        mpn : str
-            mining profile name, refers to the coin ticker
-        first : int
-            limits the number of data points returned
-        """
-
-        query = """query getWorkersOverview($mpn: MiningProfileName, $username: String, $first: Int) {
-                    miners(filter: {
-                            miningProfileName: { equalTo: $mpn }
-                            user: { username: { equalTo: $username } }
-                    }, first: $first) {
-                        edges {
-                        node {
-                            workerName
-                            details24H {
-                                hashrate
-                                status
-                                efficiency
-                                validShares
-                                staleShares
-                                badShares
-                                duplicateShares
-                                invalidShares
-                                lowDiffShares
-                            }
-                        }
-                    }
-                }
-            }"""
-        params = {"username": f"{subaccount}", "mpn": mpn, "first": first}
-
-        return self.request(query, params)
-
-    def get_worker_hashrate_history(
-        self,
-        subaccount: str,
-        workername: str,
-        mpn: str,
-        inputBucket: str,
-        inputDuration: str,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns an object of a miner hashrate timeseries.
-
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        workername : str
-            rig identifier
-        mpn : str
-            mining profile name, refers to the coin ticker
-        inputBucket : str
-            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
-        inputDuration : str
-            intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
-        first : int
-            limits the number of data points returned
-        """
-
-        query = """query getWorkerHashrateHistory($inputUsername: String!, $workerName: String!, $mpn: MiningProfileName!, $inputBucket: HashrateIntervals!, $inputDuration: HashrateIntervals!, $first: Int) {
-                    getWorkerHashrateHistory(username: $inputUsername, workerName: $workerName, mpn: $mpn, inputBucket: $inputBucket, inputDuration: $inputDuration, first: $first) {
-                        edges {
-                            node {
-                                time
-                                hashrate
-                            }
-                        }
-                    }
-                }"""
-
-        params = {
-            "inputUsername": f"{subaccount}",
-            "workerName": workername,
-            "mpn": mpn,
-            "inputBucket": inputBucket,
-            "inputDuration": inputDuration,
-            "first": first,
-        }
-
-        return self.request(query, params)
-
-    def get_subaccount_workers_status(
-        self,
-        mpn: str,
-        subaccount: str,
-    ) -> dict[str, Any]:
-        """ """
-
-        query = """query getUserMinersStatusCount($usrname: String!, $mpn: MiningProfileName!) {
-                    getUserMinersStatusCount(usrname: $usrname, mpn: $mpn) {
-                        dead
-                        warning
-                        active
-                    }
-                }
-        """
-
-        params = {"mpn": mpn, "usrname": f"{subaccount}"}
-
-        return self.request(query, params)
-
-    def get_pool_hashrate(self, mpn: str, orgSlug: str) -> dict[str, Any]:
-        """
-        Returns an integer count of distinct Profile active workers.
-        Parameters:
-        -----------
-        mpn : str
-            mining profile name, refers to the coin ticker
-        orgSlug : str
-            organization name
-        """
-        query = """query getPoolHashrate {
-                    getPoolHashrate(mpn: BTC, orgSlug: "luxor")
-                }
-            """
-        params = {"mpn": mpn, "orgSlug": orgSlug}
-        return self.request(query, params)
-
-    def get_revenue(
-        self,
-        subaccount: str,
-        mpn: str,
-        startInterval: dict[str, Any],
-        endInterval: dict[str, Any],
-    ) -> dict[str, Any]:
-        """
-        Returns on-chain transactions for a subaccount and currency combo.
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        cid : str
-            currency identifier, refers to the coin ticker
-        startInterval : dict
-            an interval of time that has passed
-        endInterval : dict
-            an interval of time that has passed
-        """
-
-        query = """query getRevenue($uname: String!, $cid: CurrencyProfileName!, $startInterval: IntervalInput!, $endInterval: IntervalInput!) {
-                    getRevenue(uname: $uname, cid: $cid, startInterval: $startInterval, endInterval: $endInterval)
-                }"""
-        params = {
-            "uname": f"{subaccount}",
-            "cid": mpn,
-            "startInterval": startInterval,
-            "endInterval": endInterval,
-        }
-
-        return self.request(query, params)
-
-    def get_profile_active_worker_count(self, mpn: str) -> dict[str, Any]:
-        """
-        Returns an integer count of distinct Profile active workers.
-        Workers are classified as active if we recorded a share in the last 15 minutes.
-
-        Parameters:
-        -----------
-        mpn : str
-            mining profile name, refers to the coin ticker
-        """
-
-        query = """query getUserMinersStatusCount {
-                    getUserMinersStatusCount(mpn: BTC)
-                }
-            """
-        params = {"mpn": mpn}
-
-        return self.request(query, params)
-
-    def get_profile_inactive_worker_count(self, mpn: str) -> dict[str, Any]:
-        """
-        Returns an integer count of distinct Profile inactive workers.
-        Workers are classified as inactive if we have not recorded a share in the last 15 minutes.
-
-        Parameters:
-        -----------
-        mpn : str
-            mining profile name, refers to the coin ticker
-        """
-
-        query = """query getInactiveWorkers {
-                    getProfileInactiveWorkers(mpn: BTC)
-                }
-            """
-        params = {"mpn": mpn}
-
-        return self.request(query, params)
-
-    def get_transaction_history(
-        self,
-        subaccount: str,
-        cid: str,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns on-chain transactions for a subaccount and currency combo.
-
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        cid : str
-            currency identifier, refers to the coin ticker
-        first : int
-            limits the number of data points returned
-        """
-
-        query = """query getTransactionHistory($uname: String!, $cid: CurrencyProfileName!, $first: Int) {
-                    getTransactionHistory(uname: $uname, cid: $cid, first: $first, orderBy: CREATED_AT_DESC) {
-                        edges {
-                        node {
-                            createdAt
-                            amount
-                            status
-                            transactionId
-                        }
-                        }
-                    }
-                }"""
-        params = {"uname": f"{subaccount}", "cid": cid, "first": first}
-
-        return self.request(query, params)
-
-    def get_hashrate_score_history(
-        self,
-        subaccount: str,
-        mpn: str,
-        first: int,
-    ) -> dict[str, Any]:
-        """
-        Returns a subaccount earnings, scoring hashrate and efficiency per day.
-
-        Parameters
-        ----------
-        subaccount : str
-            subaccount username
-        mpn : str
-            mining profile name, refers to the coin ticker
-        first : int
-            limits the number of data points returned
-        """
-
-        query = """ query getHashrateScoreHistory($mpn: MiningProfileName!, $uname: String!, $first : Int) {
-                    getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first, orderBy: DATE_DESC) {
-                        nodes {
-                            date
+    query = """query getWorkersOverview($mpn: MiningProfileName, $username: String, $first: Int) {
+                miners(filter: {
+                        miningProfileName: { equalTo: $mpn }
+                        user: { username: { equalTo: $username } }
+                }, first: $first) {
+                    edges {
+                    node {
+                        workerName
+                        details24H {
                             hashrate
+                            status
                             efficiency
-                            revenue
-                            }
+                            validShares
+                            staleShares
+                            badShares
+                            duplicateShares
+                            invalidShares
+                            lowDiffShares
                         }
-                    }"""
-
-        params = {"uname": f"{subaccount}", "mpn": mpn, "first": first}
-
-        return self.request(query, params)
-
-    def get_revenue_ph(self, mpn: str) -> dict[str, Any]:
-        """
-        Returns average Hashprice per PH over the last 24H.
-
-        Parameters
-        ----------
-        mpn : str
-            mining profile name, refers to the coin ticker
-        first : int
-            limits the number of data points returned
-        """
-
-        query = """query getRevenuePh($mpn: MiningProfileName!) {
-                    getRevenuePh(mpn: $mpn)
+                    }
                 }
+            }
+        }"""
+    params = {"username": f"{subaccount}", "mpn": mpn, "first": first}
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_worker_hashrate_history(
+    subaccount: str,
+    workername: str,
+    mpn: str,
+    inputBucket: str,
+    inputDuration: str,
+    first: int,
+) -> dict[str, Any]:
+    """
+    Returns an object of a miner hashrate timeseries.
+
+    subaccount (str): subaccount username
+    workername (str): rig identifier
+    mpn (str): mining profile name, refers to the coin ticker
+    inputBucket (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
+    inputDuration (str): intervals to generate the timeseries, options are: `_15_MINUTE`, `_1_HOUR`, `_6_HOUR` and `_1_DAY`
+    first (int): limits the number of data points returned
+    """
+
+    query = """query getWorkerHashrateHistory($inputUsername: String!, $workerName: String!, $mpn: MiningProfileName!, $inputBucket: HashrateIntervals!, $inputDuration: HashrateIntervals!, $first: Int) {
+                getWorkerHashrateHistory(username: $inputUsername, workerName: $workerName, mpn: $mpn, inputBucket: $inputBucket, inputDuration: $inputDuration, first: $first) {
+                    edges {
+                        node {
+                            time
+                            hashrate
+                        }
+                    }
+                }
+            }"""
+
+    params = {
+        "inputUsername": f"{subaccount}",
+        "workerName": workername,
+        "mpn": mpn,
+        "inputBucket": inputBucket,
+        "inputDuration": inputDuration,
+        "first": first,
+    }
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_subaccount_workers_status(
+    mpn: str,
+    subaccount: str,
+) -> dict[str, Any]:
+    """
+    Returns an integer count of distinct Profile active workers.
+
+    mpn (str): mining profile name, refers to the coin ticker
+    subaccount (str): subaccount name
+    """
+
+    query = """query getUserMinersStatusCount($usrname: String!, $mpn: MiningProfileName!) {
+                getUserMinersStatusCount(usrname: $usrname, mpn: $mpn) {
+                    dead
+                    warning
+                    active
+                }
+            }
+    """
+
+    params = {"mpn": mpn, "usrname": f"{subaccount}"}
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_pool_hashrate(mpn: str, org_slug: str) -> dict[str, Any]:
+    """
+    Returns an integer count of distinct Profile active workers.
+
+    mpn (str): mining profile name, refers to the coin ticker
+    org_slug (str): organization name
+    """
+    query = """query getPoolHashrate {
+                getPoolHashrate(mpn: BTC, orgSlug: "luxor")
+            }
         """
+    params = {"mpn": mpn, "orgSlug": org_slug}
+    return CLIENT.request(query, params)
 
-        params = {"mpn": mpn}
 
-        return self.request(query, params)
+@app.command()
+def get_revenue(
+    subaccount: str,
+    mpn: str,
+    start_interval: str,
+    end_interval: str,
+) -> dict[str, Any]:
+    """
+    Returns on-chain transactions for a subaccount and currency combo.
 
-    def dynamic_exec(self, method: str, params: str) -> dict[str, Any]:
+    subaccount (str): subaccount username
+    mpn (str): mining profile name, refers to the coin ticker
+    cid (str): currency identifier, refers to the coin ticker
+    start_interval (str): string JSON representation of an interval of time that has passed
+    end_interval (str): string JSON representation of an interval of time that has passed
+    """
+
+    query = """query getRevenue($uname: String!, $cid: CurrencyProfileName!, $startInterval: IntervalInput!, $endInterval: IntervalInput!) {
+                getRevenue(uname: $uname, cid: $cid, startInterval: $startInterval, endInterval: $endInterval)
+            }"""
+    params = {
+        "uname": f"{subaccount}",
+        "cid": mpn,
+        "startInterval": json.loads(start_interval),
+        "endInterval": json.loads(end_interval),
+    }
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_profile_active_worker_count(mpn: str) -> dict[str, Any]:
+    """
+    Returns an integer count of distinct Profile active workers.
+    Workers are classified as active if we recorded a share in the last 15 minutes.
+
+    mpn (str): mining profile name, refers to the coin ticker
+    """
+
+    query = """query getUserMinersStatusCount {
+                getUserMinersStatusCount(mpn: BTC)
+            }
         """
-        Helper function for dynamically calling functions safely.
+    params = {"mpn": mpn}
 
-        Parameters
-        ----------
-        method : str
-            Class method to call
-        params : dictionary
-            Params to construct the method call
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_profile_inactive_worker_count(mpn: str) -> dict[str, Any]:
+    """
+    Returns an integer count of distinct Profile inactive workers.
+    Workers are classified as inactive if we have not recorded a share in the last 15 minutes.
+
+    mpn (str): Mining profile name, refers to the coin ticker
+    """
+
+    query = """query getInactiveWorkers {
+                getProfileInactiveWorkers(mpn: BTC)
+            }
         """
+    params = {"mpn": mpn}
 
-        if hasattr(self, method) and callable(getattr(self, method)):
-            func = getattr(self, method)
+    return CLIENT.request(query, params)
 
-            args: list[str | int] = []
-            for arg in params.split(","):
-                if arg.isdigit():
-                    args.append(int(arg))
-                    # TODO: get typed arguments. If a str param is passed with integers can be converted incorrectly as int
-                else:
-                    args.append(arg)
 
-            return func(*args)
+@app.command()
+def get_transaction_history(
+    subaccount: str,
+    cid: str,
+    first: int,
+) -> dict[str, Any]:
+    """
+    Returns on-chain transactions for a subaccount and currency combo.
 
-        raise Exception(f"failed to execute {method}")
+    subaccount (str): Subaccount username
+    cid (str): Currency identifier, refers to the coin ticker
+    first (int): Limits the number of data points returned
+    """
+
+    query = """query getTransactionHistory($uname: String!, $cid: CurrencyProfileName!, $first: Int) {
+                getTransactionHistory(uname: $uname, cid: $cid, first: $first, orderBy: CREATED_AT_DESC) {
+                    edges {
+                    node {
+                        createdAt
+                        amount
+                        status
+                        transactionId
+                    }
+                    }
+                }
+            }"""
+    params = {"uname": f"{subaccount}", "cid": cid, "first": first}
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_hashrate_score_history(
+    subaccount: str,
+    mpn: str,
+    first: int,
+) -> dict[str, Any]:
+    """
+
+    Returns a subaccount earnings, scoring hashrate and efficiency per day.
+
+    Args:
+        subaccount (str): Subaccount username
+        mpn (str): Mining profile name, refers to the coin ticker
+        first (int): Limits the number of data points returned
+
+    Returns:
+        dict[str, Any]: JSON response of the graphql query
+    """
+
+    query = """ query getHashrateScoreHistory($mpn: MiningProfileName!, $uname: String!, $first : Int) {
+                getHashrateScoreHistory(mpn: $mpn, uname: $uname, first: $first, orderBy: DATE_DESC) {
+                    nodes {
+                        date
+                        hashrate
+                        efficiency
+                        revenue
+                        }
+                    }
+                }"""
+
+    params = {"uname": f"{subaccount}", "mpn": mpn, "first": first}
+
+    return CLIENT.request(query, params)
+
+
+@app.command()
+def get_revenue_ph(mpn: str) -> dict[str, Any]:
+    """
+
+    Returns average Hashprice per PH over the last 24H.
+
+    Args:
+        mpn (str): Mining profile name, refers to the coin ticker
+
+    Returns:
+        dict[str, Any]: JSON response of the graphql query
+    """
+
+    query = """query getRevenuePh($mpn: MiningProfileName!) {
+                getRevenuePh(mpn: $mpn)
+            }
+    """
+
+    params = {"mpn": mpn}
+
+    return CLIENT.request(query, params)
 
 
 if __name__ == "__main__":
-    parser = optparse.OptionParser()
-
-    parser.add_option(
-        "-e",
-        "--endpoint",
-        dest="host",
-        help="API ENDPOINT",
-        default="https://api.beta.luxor.tech/graphql",
-    )
-    parser.add_option(
-        "-o",
-        "--organization",
-        dest="org",
-        help="Organization Slug",
-        default="luxor",
-    )
-    parser.add_option(
-        "-k",
-        "--key",
-        dest="key",
-        help="Profile API Key",
-        default="",
-    )
-    parser.add_option(
-        "-m",
-        "--method",
-        dest="method",
-        help="API Request method",
-        default="POST",
-    )
-    parser.add_option(
-        "-f",
-        "--function",
-        dest="function",
-        help="API Class method",
-        default="",
-    )
-    parser.add_option(
-        "-q",
-        "--query",
-        dest="query",
-        help="API Request query",
-        default="",
-    )
-    parser.add_option(
-        "-p",
-        "--params",
-        dest="params",
-        help="API Request params",
-        default="",
-    )
-    parser.add_option("-d", "--df", dest="df", help="Pandas DataFrame", default=False)
-
-    options, args = parser.parse_args()
-
-    API_ = API(options.host, options.org, options.key, options.method)
-
-    if options.query == "":
-        if options.function == "":
-            raise Exception("must provide function or query")
-
-        if options.function not in dir(API_):
-            raise Exception("function not found")
-
-    params = ""
-    if options.params is not None:
-        params = options.params
-
-    try:
-        if options.query == "":
-            resp = API_.dynamic_exec(options.function, options.params)
-        else:
-            resp = API_.request(options.query, options.params)
-        logging.info(resp)
-
-    except Exception as error:
-        logging.critical(error, exc_info=True)
-        exit(1)
-
-    exit(0)
+    app()
