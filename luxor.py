@@ -1,18 +1,17 @@
-# import packages
+from __future__ import annotations
+
 import json
 import logging
-import requests
 import optparse
-import pandas as pd
-from typing import Dict, Any
-from resolvers import RESOLVERS
+from typing import Any
 
-# set logging
+import requests
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(),
-              logging.FileHandler('requests.log')])
+    handlers=[logging.StreamHandler(), logging.FileHandler("requests.log")],
+)
 
 
 class API:
@@ -23,49 +22,52 @@ class API:
     -------
     request(query, params)
         Base function to execute operations against Luxor's GraphQL API
-    
+
     get_subaccounts(first)
         Returns all subaccounts that belong to the Profile owner of the API Key.
-        
+
     get_subaccount_mining_summary(subaccount, mpn, inputInterval)
         Returns an object of a subaccount mining summary.
-    
+
     get_subaccount_hashrate_history(subaccount, mpn, inputInterval, first)
         Returns an object of a subaccount hashrate timeseries.
-    
+
     get_worker_details(subaccount, mpn, minutes, first)
         Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined minute interval.
 
     get_worker_details_1H(subaccount, mpn, first)
         Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.
-    
+
     get_worker_details_24H(subaccount, mpn, first)
         Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last 24 hours.
-    
+
     get_worker_hashrate_history(subaccount, workername, mpn, inputBucket, inputDuration, first)
         Returns an object of a miner hashrate timeseries.
-    
+
     get_profile_active_worker_count(mpn)
         Returns an integer count of distinct Profile active workers.
-    
+
     get_profile_inactive_worker_count(mpn)
         Returns an integer count of distinct Profile inactive workers.
 
     get_transaction_history(subaccount, cid, first)
         Returns on-chain transactions for a subaccount and currency combo.
-    
+
     get_hashrate_score_history(subaccount, mpn, first)
         Returns a subaccount earnings, scoring hashrate and efficiency per day.
-    
+
     get_revenue_ph(mpn, first)
-        Returns average Hashprice per PH over the last 24H. 
+        Returns average Hashprice per PH over the last 24H.
     """
-    def __init__(self,
-                 host: str,
-                 org: str,
-                 key: str,
-                 method: str,
-                 verbose: bool = False):
+
+    def __init__(
+        self,
+        host: str,
+        org: str,
+        key: str,
+        method: str,
+        verbose: bool = False,
+    ):
         """
         Parameters
         ----------
@@ -78,10 +80,10 @@ class API:
 
         key : str
             Random generated API Key. Default is an empty string.
-        
+
         method : str
             API request METHOD. Default is `POST`.
-        
+
         query : str
             API request QUERY. Default is an empty string.
 
@@ -98,7 +100,11 @@ class API:
         self.method = method
         self.verbose = verbose
 
-    def request(self, query: str, params: Dict[str, Any] = None):
+    def request(
+        self,
+        query: str,
+        params: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Base function to execute operations against Luxor's GraphQL API
 
@@ -111,55 +117,63 @@ class API:
         """
 
         headers = {
-            'Content-Type': 'application/json',
-            'x-lux-api-key': f"{self.key}",
+            "Content-Type": "application/json",
+            "x-lux-api-key": f"{self.key}",
         }
 
         s = requests.Session()
-        s.headers = headers
+        s.headers = headers  # type: ignore
 
         if self.verbose:
             logging.info(query)
 
-        response = s.request(self.method,
-                             self.host,
-                             data=json.dumps({
-                                 'query': query,
-                                 'variables': params
-                             }).encode('utf-8'))
+        response = s.request(
+            self.method,
+            self.host,
+            data=json.dumps({"query": query, "variables": params}).encode("utf-8"),
+        )
 
         if response.status_code == 200:
             return response.json()
         elif response.content:
             raise Exception(
-                str(response.status_code) + ": " + str(response.reason) + ": " +
-                str(response.content.decode()))
+                str(response.status_code)
+                + ": "
+                + str(response.reason)
+                + ": "
+                + str(response.content.decode()),
+            )
         else:
             raise Exception(str(response.status_code) + ": " + str(response.reason))
 
     # Define API Methods
-    def get_all_transaction_history(self, mpn: str, subaccount: str, first: int) -> requests.Request:
-        
+    def get_all_transaction_history(
+        self,
+        mpn: str,
+        subaccount: str,
+        first: int,
+    ) -> dict[str, Any]:
+
         query = """query getAllTransactionHistory($cid: CurrencyProfileName!, $uname: String!, $first: Int) {
-            getAllTransactionHistory(cid: $cid, uname: $uname, first: $first) {  
-                edges {  
-                    node {  
-                        transactionId  
-                        amount  
+            getAllTransactionHistory(cid: $cid, uname: $uname, first: $first) {
+                edges {
+                    node {
+                        transactionId
+                        amount
                         status
                         payoutAddress
                         currency
-                    }  
-                }  
-            }  
+                    }
+                }
+            }
         }
         """
-        
-        params = {'cid': mpn, 'uname': f"{subaccount}", 'first': first}
-        
+
+        params = {"cid": mpn, "uname": f"{subaccount}", "first": first}
+
         return self.request(query, params)
-        
-    def get_subaccounts(self, first: int, offset: int = 0) -> requests.Request:
+
+    def get_subaccounts(self, first: int, offset: int = 0) -> dict[str, Any]:
         """
         Returns all subaccounts that belong to the Profile owner of the API Key.
 
@@ -172,15 +186,19 @@ class API:
         """
 
         query = """query getSubaccounts($first: Int, $offset: Int) {users(first: $first, offset: $offset) {edges {node {username}}}}"""
-        params = {'first': first, 'offset': offset}
+        params = {"first": first, "offset": offset}
 
         return self.request(query, params)
-    
-    def get_subaccount_mining_summary(self, subaccount: str, mpn: str,
-                                      inputInterval: str) -> requests.Request:
+
+    def get_subaccount_mining_summary(
+        self,
+        subaccount: str,
+        mpn: str,
+        inputInterval: str,
+    ) -> dict[str, Any]:
         """
         Returns an object of a subaccount mining summary.
-        
+
         Parameters
         ----------
         subaccount : str
@@ -190,7 +208,7 @@ class API:
         inputInterval : str
             intervals to generate the mining summary lookback, options are: `_15_MINUTE`, `_1_HOUR`, `_1_HOUR` and `_1_DAY`
         """
-        
+
         query = """query getMiningSummary($mpn: MiningProfileName!, $userName: String!, $inputDuration: HashrateIntervals!) {
                         getMiningSummary(mpn: $mpn, userName: $userName, inputDuration: $inputDuration) {
                             hashrate
@@ -203,18 +221,22 @@ class API:
                     }
                 }
         """
-        
+
         params = {
-            'userName': f"{subaccount}",
-            'mpn': mpn,
-            'inputDuration': inputInterval
+            "userName": f"{subaccount}",
+            "mpn": mpn,
+            "inputDuration": inputInterval,
         }
-        
+
         return self.request(query, params)
 
-    def get_subaccount_hashrate_history(self, subaccount: str, mpn: str,
-                                        inputInterval: str,
-                                        first: int) -> requests.Request:
+    def get_subaccount_hashrate_history(
+        self,
+        subaccount: str,
+        mpn: str,
+        inputInterval: str,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns an object of a subaccount hashrate timeseries.
 
@@ -241,19 +263,24 @@ class API:
             }
         }"""
         params = {
-            'inputUsername': f"{subaccount}",
-            'mpn': mpn,
-            'inputInterval': inputInterval,
-            'first': first
+            "inputUsername": f"{subaccount}",
+            "mpn": mpn,
+            "inputInterval": inputInterval,
+            "first": first,
         }
 
         return self.request(query, params)
-    
-    def get_worker_details(self, subaccount: str, mpn: str,
-                           minutes: int, first: int) -> requests.Request: 
+
+    def get_worker_details(
+        self,
+        subaccount: str,
+        mpn: str,
+        minutes: int,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined interval.
-        
+
         Parameters
         ----------
         subaccount : str
@@ -265,7 +292,7 @@ class API:
         first : int
             limits the number of data points returned
         """
-        
+
         query = """query getWorkerDetails($duration: IntervalInput!, $mpn: MiningProfileName!, $uname: String!, $first: Int) {
                         getWorkerDetails(
                             duration: $duration
@@ -291,17 +318,26 @@ class API:
                             }
                         }
                     }"""
-                        
-        duration = {'minutes': minutes}
-        params = {'duration': duration, 'mpn': mpn, 'uname':  f"{subaccount}", 'first': first}
-        
+
+        duration = {"minutes": minutes}
+        params = {
+            "duration": duration,
+            "mpn": mpn,
+            "uname": f"{subaccount}",
+            "first": first,
+        }
+
         return self.request(query, params)
 
-    def get_worker_details_1H(self, subaccount: str, mpn: str,
-                              first: int) -> requests.Request:
+    def get_worker_details_1H(
+        self,
+        subaccount: str,
+        mpn: str,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.
-        
+
         Parameters
         ----------
         subaccount : str
@@ -335,15 +371,19 @@ class API:
                     }
                 }
             }"""
-        params = {'username': f"{subaccount}", 'mpn': mpn, 'first': first}
+        params = {"username": f"{subaccount}", "mpn": mpn, "first": first}
 
         return self.request(query, params)
 
-    def get_worker_details_24H(self, subaccount: str, mpn: str,
-                               first: int) -> requests.Request:
+    def get_worker_details_24H(
+        self,
+        subaccount: str,
+        mpn: str,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last 24 hours.
-        
+
         Parameters
         ----------
         subaccount : str
@@ -377,15 +417,22 @@ class API:
                     }
                 }
             }"""
-        params = {'username': f"{subaccount}", 'mpn': mpn, 'first': first}
+        params = {"username": f"{subaccount}", "mpn": mpn, "first": first}
 
         return self.request(query, params)
 
-    def get_worker_hashrate_history(self, subaccount: str, workername: str, mpn: str,
-                                    inputBucket: str, inputDuration: str, first: int) -> requests.Request:
+    def get_worker_hashrate_history(
+        self,
+        subaccount: str,
+        workername: str,
+        mpn: str,
+        inputBucket: str,
+        inputDuration: str,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns an object of a miner hashrate timeseries.
-        
+
         Parameters
         ----------
         subaccount : str
@@ -414,21 +461,32 @@ class API:
                 }"""
 
         params = {
-            'inputUsername': f"{subaccount}",
-            'workerName': workername,
-            'mpn': mpn,
-            'inputBucket': inputBucket,
-            'inputDuration': inputDuration,
-            'first': first
+            "inputUsername": f"{subaccount}",
+            "workerName": workername,
+            "mpn": mpn,
+            "inputBucket": inputBucket,
+            "inputDuration": inputDuration,
+            "first": first,
         }
 
         return self.request(query, params)
-    
-    def get_subaccount_workers_status(self, mpn: str, subaccount: str) -> requests.Request: 
+
+    def get_subaccount_workers_status(
+        self,
+        mpn: str,
+        subaccount: str,
+    ) -> dict[str, Any]:
         """
-        
+        Returns an integer count of distinct subaccount worker states.
+
+        Parameters:
+        -----------
+        mpn : str
+            mining profile name, refers to the coin ticker
+        subaccount : str
+            subaccount username
         """
-        
+
         query = """query getUserMinersStatusCount($usrname: String!, $mpn: MiningProfileName!) {
                     getUserMinersStatusCount(usrname: $usrname, mpn: $mpn) {
                         dead
@@ -437,12 +495,12 @@ class API:
                     }
                 }
         """
-        
-        params = {'mpn': mpn, 'usrname': f"{subaccount}"}
-        
+
+        params = {"mpn": mpn, "usrname": f"{subaccount}"}
+
         return self.request(query, params)
-    
-    def get_pool_hashrate(self, mpn: str, orgSlug: str) -> requests.Request:
+
+    def get_pool_hashrate(self, mpn: str, orgSlug: str) -> dict[str, Any]:
         """
         Returns an integer count of distinct Profile active workers.
         Parameters:
@@ -456,10 +514,16 @@ class API:
                     getPoolHashrate(mpn: BTC, orgSlug: "luxor")
                 }
             """
-        params = {'mpn': mpn, 'orgSlug': orgSlug}
+        params = {"mpn": mpn, "orgSlug": orgSlug}
         return self.request(query, params)
-    
-    def get_revenue(self, subaccount: str, mpn: str, startInterval, endInterval) -> requests.Request:
+
+    def get_revenue(
+        self,
+        subaccount: str,
+        mpn: str,
+        startInterval: dict[str, Any],
+        endInterval: dict[str, Any],
+    ) -> dict[str, Any]:
         """
         Returns on-chain transactions for a subaccount and currency combo.
         Parameters
@@ -473,19 +537,24 @@ class API:
         endInterval : dict
             an interval of time that has passed
         """
-        
+
         query = """query getRevenue($uname: String!, $cid: CurrencyProfileName!, $startInterval: IntervalInput!, $endInterval: IntervalInput!) {
                     getRevenue(uname: $uname, cid: $cid, startInterval: $startInterval, endInterval: $endInterval)
                 }"""
-        params = {'uname': f"{subaccount}", 'cid':  mpn, 'startInterval': startInterval, 'endInterval': endInterval}
-        
+        params = {
+            "uname": f"{subaccount}",
+            "cid": mpn,
+            "startInterval": startInterval,
+            "endInterval": endInterval,
+        }
+
         return self.request(query, params)
 
-    def get_profile_active_worker_count(self, mpn: str) -> requests.Request:
+    def get_profile_active_worker_count(self, mpn: str) -> dict[str, Any]:
         """
         Returns an integer count of distinct Profile active workers.
-        Workers are classified as active if we recorded a share in the last 15 minutes.
-        
+        Workers are classified as active if we recorded a share in the last 2 minutes.
+
         Parameters:
         -----------
         mpn : str
@@ -496,15 +565,15 @@ class API:
                     getUserMinersStatusCount(mpn: BTC)
                 }
             """
-        params = {'mpn': mpn}
+        params = {"mpn": mpn}
 
         return self.request(query, params)
 
-    def get_profile_inactive_worker_count(self, mpn: str) -> requests.Request:
+    def get_profile_inactive_worker_count(self, mpn: str) -> dict[str, Any]:
         """
         Returns an integer count of distinct Profile inactive workers.
-        Workers are classified as inactive if we have not recorded a share in the last 15 minutes.
-        
+        Workers are classified as inactive if we have not recorded a share in the last 5 minutes.
+
         Parameters:
         -----------
         mpn : str
@@ -515,11 +584,16 @@ class API:
                     getProfileInactiveWorkers(mpn: BTC)
                 }
             """
-        params = {'mpn': mpn}
+        params = {"mpn": mpn}
 
         return self.request(query, params)
 
-    def get_transaction_history(self, subaccount: str, cid: str, first: int) -> requests.Request:
+    def get_transaction_history(
+        self,
+        subaccount: str,
+        cid: str,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns on-chain transactions for a subaccount and currency combo.
 
@@ -545,14 +619,19 @@ class API:
                         }
                     }
                 }"""
-        params = {'uname': f"{subaccount}", 'cid': cid, 'first': first}
+        params = {"uname": f"{subaccount}", "cid": cid, "first": first}
 
         return self.request(query, params)
 
-    def get_hashrate_score_history(self, subaccount: str, mpn: str, first: int) -> requests.Request:
+    def get_hashrate_score_history(
+        self,
+        subaccount: str,
+        mpn: str,
+        first: int,
+    ) -> dict[str, Any]:
         """
         Returns a subaccount earnings, scoring hashrate and efficiency per day.
-        
+
         Parameters
         ----------
         subaccount : str
@@ -574,14 +653,14 @@ class API:
                         }
                     }"""
 
-        params = {'uname': f"{subaccount}", 'mpn': mpn, 'first': first}
+        params = {"uname": f"{subaccount}", "mpn": mpn, "first": first}
 
         return self.request(query, params)
 
-    def get_revenue_ph(self, mpn: str) -> requests.Request:
+    def get_revenue_ph(self, mpn: str) -> dict[str, Any]:
         """
-        Returns average Hashprice per PH over the last 24H. 
-        
+        Returns average Hashprice per PH over the last 24H.
+
         Parameters
         ----------
         mpn : str
@@ -589,17 +668,17 @@ class API:
         first : int
             limits the number of data points returned
         """
-        
+
         query = """query getRevenuePh($mpn: MiningProfileName!) {
                     getRevenuePh(mpn: $mpn)
                 }
         """
 
-        params = {'mpn': mpn}
-        
+        params = {"mpn": mpn}
+
         return self.request(query, params)
-    
-    def exec(self, method: str, params: Dict[str, Any]) -> requests.Request:
+
+    def dynamic_exec(self, method: str, params: str) -> dict[str, Any]:
         """
         Helper function for dynamically calling functions safely.
 
@@ -614,85 +693,93 @@ class API:
         if hasattr(self, method) and callable(getattr(self, method)):
             func = getattr(self, method)
 
-            args = []
-            for arg in params.split(','):
+            args: list[str | int] = []
+            for arg in params.split(","):
                 if arg.isdigit():
-                    args.append(
-                        int(arg)
-                    )  
+                    args.append(int(arg))
                     # TODO: get typed arguments. If a str param is passed with integers can be converted incorrectly as int
                 else:
                     args.append(arg)
 
             return func(*args)
 
-        raise Exception(f'failed to execute {method}')
+        raise Exception(f"failed to execute {method}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = optparse.OptionParser()
 
-    parser.add_option('-e',
-                      '--endpoint',
-                      dest='host',
-                      help='API ENDPOINT',
-                      default='https://api.beta.luxor.tech/graphql')
-    parser.add_option('-o',
-                      '--organization',
-                      dest='org',
-                      help='Organization Slug',
-                      default='luxor')
-    parser.add_option('-k',
-                      '--key',
-                      dest='key',
-                      help='Profile API Key',
-                      default='')
-    parser.add_option('-m',
-                      '--method',
-                      dest='method',
-                      help='API Request method',
-                      default='POST')
-    parser.add_option('-f',
-                      '--function',
-                      dest='function',
-                      help='API Class method',
-                      default='')
-    parser.add_option('-q',
-                      '--query',
-                      dest='query',
-                      help='API Request query',
-                      default='')
-    parser.add_option('-p',
-                      '--params',
-                      dest='params',
-                      help='API Request params',
-                      default='')
-    parser.add_option('-d',
-                      '--df',
-                      dest='df',
-                      help='Pandas DataFrame',
-                      default=False)
+    parser.add_option(
+        "-e",
+        "--endpoint",
+        dest="host",
+        help="API ENDPOINT",
+        default="https://api.beta.luxor.tech/graphql",
+    )
+    parser.add_option(
+        "-o",
+        "--organization",
+        dest="org",
+        help="Organization Slug",
+        default="luxor",
+    )
+    parser.add_option(
+        "-k",
+        "--key",
+        dest="key",
+        help="Profile API Key",
+        default="",
+    )
+    parser.add_option(
+        "-m",
+        "--method",
+        dest="method",
+        help="API Request method",
+        default="POST",
+    )
+    parser.add_option(
+        "-f",
+        "--function",
+        dest="function",
+        help="API Class method",
+        default="",
+    )
+    parser.add_option(
+        "-q",
+        "--query",
+        dest="query",
+        help="API Request query",
+        default="",
+    )
+    parser.add_option(
+        "-p",
+        "--params",
+        dest="params",
+        help="API Request params",
+        default="",
+    )
+    parser.add_option("-d", "--df", dest="df", help="Pandas DataFrame", default=False)
 
     options, args = parser.parse_args()
 
-    API = API(options.host, options.org, options.key, options.method)
-    RESOLVERS = RESOLVERS(options.df)
+    API_ = API(options.host, options.org, options.key, options.method)
 
-    if options.query == '':
-        if options.function == '':
-            raise Exception('must provide function or query')
+    if options.query == "":
+        if options.function == "":
+            raise Exception("must provide function or query")
 
-        if not options.function in dir(API):
-            raise Exception('function not found')
+        if options.function not in dir(API_):
+            raise Exception("function not found")
 
-    params = ''
+    params = ""
     if options.params is not None:
         params = options.params
 
     try:
-        if options.query == '':
-            resp = API.exec(options.function, options.params)
+        if options.query == "":
+            resp = API_.dynamic_exec(options.function, options.params)
         else:
-            resp = API.request(options.query, options.params)
+            resp = API_.request(options.query, options.params)
         logging.info(resp)
 
     except Exception as error:
