@@ -476,7 +476,16 @@ class API:
         mpn: str,
         subaccount: str,
     ) -> dict[str, Any]:
-        """ """
+        """
+        Returns an integer count of distinct subaccount worker states.
+
+        Parameters:
+        -----------
+        mpn : str
+            mining profile name, refers to the coin ticker
+        subaccount : str
+            subaccount username
+        """
 
         query = """query getUserMinersStatusCount($usrname: String!, $mpn: MiningProfileName!) {
                     getUserMinersStatusCount(usrname: $usrname, mpn: $mpn) {
@@ -544,7 +553,7 @@ class API:
     def get_profile_active_worker_count(self, mpn: str) -> dict[str, Any]:
         """
         Returns an integer count of distinct Profile active workers.
-        Workers are classified as active if we recorded a share in the last 15 minutes.
+        Workers are classified as active if we recorded a share in the last 2 minutes.
 
         Parameters:
         -----------
@@ -563,7 +572,7 @@ class API:
     def get_profile_inactive_worker_count(self, mpn: str) -> dict[str, Any]:
         """
         Returns an integer count of distinct Profile inactive workers.
-        Workers are classified as inactive if we have not recorded a share in the last 15 minutes.
+        Workers are classified as inactive if we have not recorded a share in the last 5 minutes.
 
         Parameters:
         -----------
