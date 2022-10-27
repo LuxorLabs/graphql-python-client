@@ -74,6 +74,6 @@ We use [pre-commit](https://pre-commit.com/#install) to maintain the same code s
 pre-commit install
 ```
 
-Now it will runt the needed validations with each commit.
+Now it will run the needed validations with each commit.
 
 ## Happy Hashing!
