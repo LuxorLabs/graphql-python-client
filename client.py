@@ -24,20 +24,11 @@ class GraphQlClient:
         host : str
             Base endpoint for all API requests. Default is: https://api.cairo.luxorlabs.dev/graphql
 
-        org : str
-            Organization slug where the Profile is registered. Default is `luxor`.
-
         key : str
             Random generated API Key. Default is an empty string.
 
         method : str
             API request METHOD. Default is `POST`.
-
-        query : str
-            API request QUERY. Default is an empty string.
-
-        params : str
-            API request PARAMS. Default is an empty string.
 
         verbose : boolean
             Boolean flag that controls if API querys are logged.
