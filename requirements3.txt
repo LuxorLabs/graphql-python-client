@@ -1,2 +1,8 @@
+# core
 requests==2.28.1
+pandas==1.5.1
+typer[all]
+python-dotenv==0.21.0
+
+# resolvers
 pandas==1.5.1

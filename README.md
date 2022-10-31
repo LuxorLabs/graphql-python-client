@@ -40,25 +40,35 @@ python luxor.py -h
 
 Result:
 ```console
-Options:
-  -h, --help
-                        show this help message and exit
-  -e HOST, --endpoint=HOST
-                        API ENDPOINT
-  -o ORG, --organization=ORG
-                        Organization Slug
-  -k KEY, --key=KEY
-                        Profile API Key
-  -m METHOD, --method=METHOD
-                        API Request method
-  -f FUNCTION, --function=FUNCTION
-                        API Class method
-  -q QUERY, --method=QUERY
-                        API Request query
-  -p PARAMS, --params=PARAMS
-                        API Request params
-  -d DF, --df=DF
-                        Pandas DataFrame
+$ python3 luxor.py --help
+
+ Usage: luxor.py [OPTIONS] COMMAND [ARGS]...
+
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.                                                                                                   │
+│ --show-completion             Show completion for the current shell, to copy it or customize the installation.                                                            │
+│ --help                        Show this message and exit.                                                                                                                 │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ get-all-transaction-history        Get all the transaction history of the user associated to the token provided.                                                          │
+│ get-hashrate-score-history         Returns a subaccount earnings, scoring hashrate and efficiency per day.                                                                │
+│ get-pool-hashrate                  Returns an integer count of distinct Profile active workers.                                                                           │
+│ get-profile-active-worker-count    Returns an integer count of distinct Profile active workers. Workers are classified as active if we recorded a share in the last 15    │
+│                                    minutes.                                                                                                                               │
+│ get-profile-inactive-worker-count  Returns an integer count of distinct Profile inactive workers. Workers are classified as inactive if we have not recorded a share in   │
+│                                    the last 15 minutes.                                                                                                                   │
+│ get-revenue                        Returns on-chain transactions for a subaccount and currency combo.                                                                     │
+│ get-revenue-ph                     Returns average Hashprice per PH over the last 24H.                                                                                    │
+│ get-subaccount-hashrate-history    Returns an object of a subaccount hashrate timeseries.                                                                                 │
+│ get-subaccount-mining-summary      Returns an object of a subaccount mining summary.                                                                                      │
+│ get-subaccount-workers-status      Returns an integer count of distinct Profile active workers.                                                                           │
+│ get-subaccounts                    Returns all subaccounts that belong to the Profile owner of the API Key.                                                               │
+│ get-transaction-history            Returns on-chain transactions for a subaccount and currency combo.                                                                     │
+│ get-worker-details                 Returns object of all workers pointed to a subaccount hashrate and efficiency details with a user-defined interval.                    │
+│ get-worker-details-1h              Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last hour.                                │
+│ get-worker-details-24h             Returns object of all workers pointed to a subaccount hashrate and efficiency details in the last 24 hours.                            │
+│ get-worker-hashrate-history        Returns an object of a miner hashrate timeseries.                                                                                      │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
 Example usage:
