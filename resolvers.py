@@ -70,7 +70,7 @@ class RESOLVERS:
         data = [list(i["node"].values())[0] for i in json["data"]["users"]["edges"]]
 
         if self.df:
-            return pd.DataFrame([data], columns=["subaccounts"])
+            return pd.DataFrame(data, columns=["subaccounts"])
         else:
             return data
 
@@ -234,13 +234,13 @@ class RESOLVERS:
 
         data = [
             list(i["node"].values())
-            for i in json["data"]["getTransactionHistory"]["edges"]
+            for i in json["data"]["getAllTransactionHistory"]["edges"]
         ]
 
         if self.df:
             return pd.DataFrame(
                 data,
-                columns=["createdAt", "amount", "status", "Transaction ID"],
+                columns=["transactionId", "amount", "status", "payoutAddress", "currency", "createdAt"],
             )
 
         return data

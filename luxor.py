@@ -62,6 +62,7 @@ def get_all_transaction_history(
                     status
                     payoutAddress
                     currency
+                    createdAt
                 }
             }
         }
