@@ -54,7 +54,7 @@ def get_all_transaction_history(
     """
 
     query = """query getAllTransactionHistory($cid: CurrencyProfileName!, $uname: String!, $first: Int) {
-        getAllTransactionHistory(cid: $cid, uname: $uname, first: $first) {
+        getAllTransactionHistory(cid: $cid, uname: $uname, first: $first, orderBy: CREATED_AT_DESC) {
             edges {
                 node {
                     transactionId

@@ -73,7 +73,8 @@ $ python3 luxor.py --help
 
 Example usage:
 ```bash
-python3 luxor.py -k KEY -f get_transaction_history -p username,BTC,10
+python3 luxor.py get-transaction-history username BTC 10
+python3 luxor.py get-all-transaction-history BTC username 10
 ```
 
 ## Developing
